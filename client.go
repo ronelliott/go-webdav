@@ -82,9 +82,7 @@ func NewClient(resource string) (*Client, error) {
 		return nil, err
 	}
 
-	transport := dat.NewTransport(username, password, !sslNoVerify)
-	client.Client = transport.Client()
-
+	client.Client = dat.NewTransport(username, password, !sslNoVerify).Client()
 	jar, err := cookiejar.New(nil)
 
 	if err != nil {
@@ -93,7 +91,7 @@ func NewClient(resource string) (*Client, error) {
 
 	client.Client.Jar = jar
 
-	// Try the connection
+	// Try the connection, mainly to set any cookies required
 	_, err = client.Root().Exists()
 
 	if err != nil {
@@ -200,6 +198,11 @@ func (client *Client) make(method, resource string, body []byte) (*http.Request,
 
 	req.Header.Set(HttpUserAgentHeader, HttpUserAgentValue)
 	return req, nil
+}
+
+// Get the location for the given response
+func (client *Client) location(res *Response) string {
+	return res.Location(client.RootPath)
 }
 
 // Read and return the data from the given response

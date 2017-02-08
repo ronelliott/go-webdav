@@ -2,6 +2,7 @@ package webdav
 
 import (
 	"encoding/xml"
+	"strings"
 	"time"
 )
 
@@ -119,7 +120,7 @@ type Response struct {
 
 // Return the location for this Response
 func (res *Response) Location(base string) string {
-	return res.Href
+	return strings.Replace(res.Href, base, "", 1)
 }
 
 // The supportedlock type

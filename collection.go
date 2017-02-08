@@ -121,7 +121,7 @@ func (col *Collection) Walk(
 		}
 
 		// Skip this location
-		if response.Href == col.Location {
+		if col.Client.location(&response) == col.Location {
 			continue
 		}
 

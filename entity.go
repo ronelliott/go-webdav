@@ -22,7 +22,7 @@ func (entity *Entity) parse(res *Response) (*Entity, bool) {
 	var isDir bool
 	out := &Entity{
 		Client:   entity.Client,
-		Location: res.Location(entity.Client.RootPath),
+		Location: entity.Client.location(res),
 	}
 
 	for _, prop := range res.PropStat.Props {
