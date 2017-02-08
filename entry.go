@@ -26,6 +26,12 @@ func (entry *Entry) Data() ([]byte, error) {
 	return entry.Client.read(res)
 }
 
+// Copy this Entry
+func (entry *Entry) Copy(location string) error {
+	_, err := entry.Client.copy(entry.Location, location, 0)
+	return err
+}
+
 // Get the parent Collection resource for this Entry
 func (entry *Entry) Parent() *Collection {
 	idx := strings.LastIndex(entry.Location, "/")

@@ -117,6 +117,11 @@ type Response struct {
 	PropStat PropStat `xml:"propstat"`
 }
 
+// Return the location for this Response
+func (res *Response) Location(base string) string {
+	return res.Href
+}
+
 // The supportedlock type
 type SupportedLock struct {
 	LockEntries []LockEntry `xml:"lockentry"`

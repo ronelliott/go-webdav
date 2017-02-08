@@ -17,9 +17,25 @@ type Entity struct {
 	LastModifiedTime time.Time
 }
 
-// Copy this Entity
-func (entity *Entity) Copy(location string) error {
-	return nil
+// Parse the given response, returning the entity and it's collection status
+func (entity *Entity) parse(res *Response) (*Entity, bool) {
+	var isDir bool
+	out := &Entity{
+		Client:   entity.Client,
+		Location: res.Location(entity.Client.RootPath),
+	}
+
+	for _, prop := range res.PropStat.Props {
+		// Check if this resource is a collection
+		if prop.ResourceType.IsCollection() {
+			isDir = true
+		}
+
+		out.CreatedTime = prop.CreationDate
+		out.LastModifiedTime = prop.LastModified.Time
+	}
+
+	return out, isDir
 }
 
 // Get the created time for this Entity
@@ -51,5 +67,6 @@ func (entity *Entity) LastModified() time.Time {
 
 // Move this Entity
 func (entity *Entity) Move(location string) error {
-	return nil
+	_, err := entity.Client.move(entity.Location, location)
+	return err
 }

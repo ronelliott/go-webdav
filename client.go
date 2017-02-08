@@ -17,6 +17,9 @@ const (
 	ClientOptionSSLNoVerify = "ssl-no-verify"
 	DepthValueInfinity      = "infinity"
 	HttpHeaderDepth         = "Depth"
+	HttpHeaderDestination   = "Destination"
+	HttpMethodCopy          = "COPY"
+	HttpMethodMove          = "MOVE"
 	HttpMethodMkcol         = "MKCOL"
 	HttpMethodPropfind      = "PROPFIND"
 	HttpUserAgentHeader     = "User-Agent"
@@ -49,9 +52,14 @@ func NewClient(resource string) (*Client, error) {
 		return nil, err
 	}
 
+	path := parsed.Path
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+
 	client := &Client{
-		BaseURL:  fmt.Sprintf("%s://%s", parsed.Scheme, parsed.Host),
-		RootPath: parsed.Path,
+		BaseURL:  fmt.Sprintf("%s://%s%s", parsed.Scheme, parsed.Host, path),
+		RootPath: path,
 	}
 
 	var username string
@@ -84,12 +92,33 @@ func NewClient(resource string) (*Client, error) {
 	}
 
 	client.Client.Jar = jar
+
+	// Try the connection
+	_, err = client.Root().Exists()
+
+	if err != nil {
+		return nil, err
+	}
+
 	return client, nil
 }
 
 // -----------------------------------------------------------------------------
 // HTTP methods
 // -----------------------------------------------------------------------------
+
+// Run an copy request at the given resource
+func (client *Client) copy(resource, destination string, depth int) (*http.Response, error) {
+	req, err := client.make(HttpMethodCopy, resource, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set(HttpHeaderDepth, client.depth(depth))
+	req.Header.Set(HttpHeaderDestination, client.url(destination))
+	return client.run(req)
+}
 
 // Run an delete request at the given resource
 func (client *Client) delete(resource string) (*http.Response, error) {
@@ -111,6 +140,19 @@ func (client *Client) mkcol(resource string) (*http.Response, error) {
 	return client.request(HttpMethodMkcol, resource, nil)
 }
 
+// Run an move request at the given resource
+func (client *Client) move(resource, destination string) (*http.Response, error) {
+	req, err := client.make(HttpMethodMove, resource, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set(HttpHeaderDepth, DepthValueInfinity)
+	req.Header.Set(HttpHeaderDestination, client.url(destination))
+	return client.run(req)
+}
+
 // Run an propfind request at the given resource
 func (client *Client) propfind(resource string, depth int) (*http.Response, error) {
 	req, err := client.make(HttpMethodPropfind, resource, nil)
@@ -119,13 +161,7 @@ func (client *Client) propfind(resource string, depth int) (*http.Response, erro
 		return nil, err
 	}
 
-	depthValue := DepthValueInfinity
-
-	if depth == 0 || depth == 1 {
-		depthValue = fmt.Sprintf("%d", depth)
-	}
-
-	req.Header.Set(HttpHeaderDepth, depthValue)
+	req.Header.Set(HttpHeaderDepth, client.depth(depth))
 	return client.run(req)
 }
 
@@ -137,6 +173,17 @@ func (client *Client) put(resource string, data []byte) (*http.Response, error) 
 // -----------------------------------------------------------------------------
 // Helper methods
 // -----------------------------------------------------------------------------
+
+// Returns the string form of the given depth value
+func (client *Client) depth(depth int) string {
+	depthValue := DepthValueInfinity
+
+	if depth == 0 || depth == 1 {
+		depthValue = fmt.Sprintf("%d", depth)
+	}
+
+	return depthValue
+}
 
 // Returns true if the response status is an error, or false otherwise
 func (client *Client) isResponseError(res *http.Response) bool {
@@ -190,11 +237,17 @@ func (client *Client) run(req *http.Request) (*http.Response, error) {
 
 // Get the full url for the given resource
 func (client *Client) url(resource string) string {
-	if !strings.HasPrefix(resource, "/") {
-		resource = resource[1:]
+	base := client.BaseURL
+
+	if strings.HasPrefix(resource, client.RootPath) {
+		resource = strings.Replace(resource, client.RootPath, "", 1)
 	}
 
-	return client.BaseURL + resource
+	if !strings.HasSuffix(base, "/") && !strings.HasPrefix(resource, "/") {
+		base += "/"
+	}
+
+	return base + resource
 }
 
 // -----------------------------------------------------------------------------
@@ -213,5 +266,5 @@ func (client *Client) Entry(location string) *Entry {
 
 // Get the root collection resource
 func (client *Client) Root() *Collection {
-	return client.Collection(client.RootPath)
+	return client.Collection("/")
 }

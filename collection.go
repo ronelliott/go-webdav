@@ -21,27 +21,6 @@ func NewCollection(client *Client, location string) *Collection {
 	}}
 }
 
-// Parse the given response, returning the entity and it's collection status
-func (col *Collection) parse(res *Response) (*Entity, bool) {
-	var isDir bool
-	out := &Entity{
-		Client:   col.Entity.Client,
-		Location: res.Href,
-	}
-
-	for _, prop := range res.PropStat.Props {
-		// Check if this resource is a collection
-		if prop.ResourceType.IsCollection() {
-			isDir = true
-		}
-
-		out.CreatedTime = prop.CreationDate
-		out.LastModifiedTime = prop.LastModified.Time
-	}
-
-	return out, isDir
-}
-
 // Return the Collections for this Collection
 func (col *Collection) Collections(recursive bool) ([]Collection, error) {
 	out := []Collection{}
@@ -78,6 +57,12 @@ func (col *Collection) Contents(recursive bool) ([]interface{}, error) {
 	}
 
 	return out, nil
+}
+
+// Copy this Collection
+func (col *Collection) Copy(location string, depth int) error {
+	_, err := col.Client.copy(col.Location, location, depth)
+	return err
 }
 
 // Create this Collection
