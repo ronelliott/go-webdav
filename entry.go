@@ -1,6 +1,5 @@
 package webdav
 
-import "fmt"
 import "strings"
 
 // An entry
@@ -47,6 +46,5 @@ func (entry *Entry) Upload(data []byte) error {
 		return err
 	}
 
-	fmt.Println(string(data))
 	return nil
 }
