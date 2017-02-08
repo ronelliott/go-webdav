@@ -2,7 +2,6 @@ package webdav
 
 import (
 	"encoding/xml"
-	// "fmt"
 	"time"
 )
 
