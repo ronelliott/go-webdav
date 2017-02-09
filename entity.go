@@ -54,6 +54,11 @@ func (entity *Entity) Exists() (bool, error) {
 	res, err := entity.Client.propfind(entity.Location, 1)
 
 	if err != nil {
+		switch err.(type) {
+		case NotFoundError:
+			return false, nil
+		}
+
 		return false, err
 	}
 

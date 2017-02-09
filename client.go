@@ -231,8 +231,16 @@ func (client *Client) run(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	if res.StatusCode == http.StatusUnauthorized {
-		err = UnauthorizedError{}
+	switch res.StatusCode {
+	case http.StatusNotFound:
+		err = NotFoundError{req.URL.String()}
+	case http.StatusUnauthorized:
+		err = UnauthorizedError{req.URL.String()}
+
+	default:
+		if res.StatusCode >= http.StatusBadRequest {
+			err = UnknownError{req.URL.String()}
+		}
 	}
 
 	return res, err

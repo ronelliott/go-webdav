@@ -15,6 +15,12 @@ func NewEntry(client *Client, location string) *Entry {
 	}}
 }
 
+// Copy this Entry
+func (entry *Entry) Copy(location string) error {
+	_, err := entry.Client.copy(entry.Location, location, 0)
+	return err
+}
+
 // Get the data for this Entry
 func (entry *Entry) Data() ([]byte, error) {
 	res, err := entry.Client.get(entry.Location)
@@ -26,10 +32,20 @@ func (entry *Entry) Data() ([]byte, error) {
 	return entry.Client.read(res)
 }
 
-// Copy this Entry
-func (entry *Entry) Copy(location string) error {
-	_, err := entry.Client.copy(entry.Location, location, 0)
-	return err
+// Ensure the parent exists for this Entry
+func (entry *Entry) EnsureParentExists() error {
+	parent := entry.Parent()
+	exists, err := parent.Exists()
+
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		return parent.Create()
+	}
+
+	return nil
 }
 
 // Get the parent Collection resource for this Entry
@@ -40,17 +56,6 @@ func (entry *Entry) Parent() *Collection {
 
 // Upload the given data to this Entry
 func (entry *Entry) Upload(data []byte) error {
-	res, err := entry.Client.put(entry.Location, data)
-
-	if err != nil {
-		return err
-	}
-
-	data, err = entry.Client.read(res)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	_, err := entry.Client.put(entry.Location, data)
+	return err
 }
