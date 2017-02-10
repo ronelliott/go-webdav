@@ -51,7 +51,7 @@ func (entity *Entity) Delete() error {
 
 // Returns true if this Entity exists, or false otherwise
 func (entity *Entity) Exists() (bool, error) {
-	res, err := entity.Client.propfind(entity.Location, 1)
+	_, err := entity.Client.propfind(entity.Location, 1)
 
 	if err != nil {
 		switch err.(type) {
@@ -62,7 +62,7 @@ func (entity *Entity) Exists() (bool, error) {
 		return false, err
 	}
 
-	return !entity.Client.isResponseError(res), nil
+	return true, nil
 }
 
 // Get the last modified time for this Entity

@@ -183,11 +183,6 @@ func (client *Client) depth(depth int) string {
 	return depthValue
 }
 
-// Returns true if the response status is an error, or false otherwise
-func (client *Client) isResponseError(res *http.Response) bool {
-	return res.StatusCode >= http.StatusBadRequest
-}
-
 // Create and a request with the given method, resource and body
 func (client *Client) make(method, resource string, body []byte) (*http.Request, error) {
 	req, err := http.NewRequest(method, client.url(resource), bytes.NewReader(body))
